@@ -3,7 +3,7 @@ import tempfile
 import logging
 from google.cloud import storage
 
-from app_utils import settings
+from modep_common import settings
 
 logger = logging.getLogger(__name__)
 
