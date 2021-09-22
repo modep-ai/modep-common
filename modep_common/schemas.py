@@ -12,7 +12,7 @@ class TabularFrameworkInfoSchema(Schema):
 
 
 class TabularFrameworkParamsSchema(Schema):
-    framework_id = fields.String(required=True, description="ID of the framework to use")
+    framework_name = fields.String(required=True, description="Name of the framework to train")
     train_ids = fields.List(fields.String(), required=True, description='IDs of datasets to train on')
     test_ids = fields.List(fields.String(), required=True, description='IDs of datasets to test on')
     target = fields.String(required=True, description='Target column to predict')
@@ -35,16 +35,9 @@ class TabularFrameworkSchema(Schema):
 class TabularFrameworkPredictSchema(Schema):
     framework_id = fields.String(required=True, description="ID of the trained framework")
     dataset_id = fields.String(required=True, description='ID of dataset to predict on')
-    max_runtime_seconds = fields.Int(required=True, description='Time in seconds to run')
 
 
 class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
         fields = ('id', 'framework_id', 'dataset_id', 'status', 'predictions')
         ordered = True
-
-
-class TabularFrameworkParamsSchema(Schema):
-    framework_id = fields.String(required=True, description="ID of the framework to use")
-
-

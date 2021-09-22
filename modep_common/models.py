@@ -133,7 +133,6 @@ class TabularFramework(TimestampMixin, db.Model):
     fold_results = db.Column(db.JSON)
     fold_leaderboard = db.Column(db.JSON)
     fold_model_txt = db.Column(db.JSON)
-
     n_folds = db.Column(db.Integer)
 
     task_id = db.Column(db.String(64), unique=True)
@@ -182,7 +181,7 @@ class TabularFrameworkPredictions(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
     framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'), nullable=True)
-    dataset_pk = db.Column(db.Integer, db.ForeignKey('tabular_dataset.pk'), nullable=True)
+    dataset_pk = db.Column(db.Integer, db.ForeignKey('tabular_dataset.pk', ondelete='CASCADE'), nullable=True)
     fold = db.Column(db.Integer)
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512), nullable=True)
