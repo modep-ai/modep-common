@@ -5,8 +5,14 @@ class DefaultResponse(Schema):
     message = fields.String(default='Success')
 
 
+class TabularFrameworkInfoSchema(Schema):
+    class Meta:
+        fields = ('framework_name', 'description', 'project', 'params')
+        ordered = True
+
+
 class TabularFrameworkParamsSchema(Schema):
-    framework_id = fields.String(required=True, description="Password")
+    framework_id = fields.String(required=True, description="ID of the framework to use")
     train_ids = fields.List(fields.String(), required=True, description='IDs of datasets to train on')
     test_ids = fields.List(fields.String(), required=True, description='IDs of datasets to test on')
     target = fields.String(required=True, description='Target column to predict')
@@ -26,7 +32,19 @@ class TabularFrameworkSchema(Schema):
         ordered = True
 
 
-class TabularFrameworkInfoSchema(Schema):
+class TabularFrameworkPredictSchema(Schema):
+    framework_id = fields.String(required=True, description="ID of the trained framework")
+    dataset_id = fields.String(required=True, description='ID of dataset to predict on')
+    max_runtime_seconds = fields.Int(required=True, description='Time in seconds to run')
+
+
+class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
-        fields = ('framework_name', 'description', 'project', 'params')
+        fields = ('id', 'framework_id', 'dataset_id', 'status', 'predictions')
         ordered = True
+
+
+class TabularFrameworkParamsSchema(Schema):
+    framework_id = fields.String(required=True, description="ID of the framework to use")
+
+

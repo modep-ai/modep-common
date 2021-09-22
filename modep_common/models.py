@@ -1,33 +1,20 @@
 import uuid
 import secrets
-import werkzeug
 from datetime import datetime
+import werkzeug
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import AnonymousUserMixin, UserMixin
 
-from sqlalchemy import desc as sql_desc
-from sqlalchemy import text as sql_text
-from sqlalchemy.sql.expression import ClauseElement
 
 db = SQLAlchemy()
 
 
-def clone_model(model, blacklist=[]):
-    """Clone an arbitrary sqlalchemy model object without its primary key values."""
-    # Ensure the model’s data is loaded before copying.
-    model.id
-
-    table = model.__table__
-    non_pk_columns = [k for k in table.columns.keys() if k not in table.primary_key and k not in blacklist]
-    data = {c: getattr(model, c) for c in non_pk_columns}
-    clone = model.__class__(**data)
-    return clone
-
 class TimestampMixin(object):
     created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
-    
+
+
 class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip = db.Column(db.String(256), unique=True)
@@ -38,7 +25,8 @@ class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
 
     def __repr__(self):
         return '<AnonUser id=%r, ip=%r, nb_requests = %i>' % (self.id, self.ip, self.nb_requests)
-    
+
+
 class User(UserMixin, TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
@@ -49,7 +37,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     api_key = db.Column(db.String(128))
     tier = db.Column(db.String(16))
     tier_info = db.Column(db.String(512))
-    
+
     def __init__(self, email, password, ip, tier='free'):
         self.id = str(uuid.uuid4())
         self.email = email
@@ -67,17 +55,19 @@ class User(UserMixin, TimestampMixin, db.Model):
 
     def __repr__(self):
         return '<User email=%r>' % (self.email)
-    
+
+
 class StripeCustomer(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
     customer_id = db.Column(db.String(255), nullable=True)
     subscription_id = db.Column(db.String(255), nullable=True)
-    
+
     def __repr__(self):
         return '<StripeCustomer id=%r, user_pk=%r, customer_id=%r, subscription_id=%r, created=%r>' % \
-                (self.id, self.user_pk, self.customer_id, self.subscription_id, self.created)    
-    
+                (self.id, self.user_pk, self.customer_id, self.subscription_id, self.created)
+
+
 class StripeCheckoutSession(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
@@ -85,19 +75,22 @@ class StripeCheckoutSession(TimestampMixin, db.Model):
     subscription_id = db.Column(db.String(255), nullable=True)
     checkout_session = db.Column(db.JSON)
 
+
 class StripeInvoice(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
     customer_id = db.Column(db.String(255), nullable=True)
     invoice = db.Column(db.JSON)
 
+
 class ContactForm(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    user_is_anon = db.Column(db.Boolean)    
+    user_is_anon = db.Column(db.Boolean)
     user_email = db.Column(db.String(128), unique=False)
     msg = db.Column(db.Text)
-    
+
+
 class TabularDataset(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
@@ -107,7 +100,7 @@ class TabularDataset(TimestampMixin, db.Model):
     name = db.Column(db.String(128))
     ext = db.Column(db.String(10))
     mbytes = db.Column(db.Float)
-    
+
     def __init__(self, id, user_pk, path, gcp_path, name, ext, mbytes):
         self.id = id
         self.user_pk = user_pk
@@ -117,16 +110,6 @@ class TabularDataset(TimestampMixin, db.Model):
         self.ext = ext
         self.mbytes = mbytes
 
-class TabularFrameworkPredictions(TimestampMixin, db.Model):
-    pk = db.Column(db.Integer, primary_key=True)
-    id = db.Column(db.String(64), unique=True)
-    framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'), nullable=True)
-    fold_predictions = db.Column(db.JSON)
-
-    def __init__(self, framework_pk, fold_predictions):
-        self.id = str(uuid.uuid4())        
-        self.framework_pk = framework_pk
-        self.fold_predictions = fold_predictions
 
 class TabularFramework(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
@@ -136,21 +119,21 @@ class TabularFramework(TimestampMixin, db.Model):
     framework_id = db.Column(db.String(32), nullable=True)
     framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework_service.pk'), nullable=True)
     framework_name = db.Column(db.String(32), nullable=True)
-    
+
     train_ids = db.Column(db.JSON)
     test_ids =  db.Column(db.JSON)
     target = db.Column(db.String(32))
     is_class = db.Column(db.Boolean)
     max_runtime_seconds = db.Column(db.Integer)
     gcp_path = db.Column(db.String(512), nullable=True)
+    gcp_model_paths = db.Column(db.JSON)
     status = db.Column(db.String(16), nullable=True)
 
     fold_meta = db.Column(db.JSON)
     fold_results = db.Column(db.JSON)
     fold_leaderboard = db.Column(db.JSON)
     fold_model_txt = db.Column(db.JSON)
-    # fold_predictions = db.Column(db.JSON)
-    
+
     n_folds = db.Column(db.Integer)
 
     task_id = db.Column(db.String(64), unique=True)
@@ -160,7 +143,7 @@ class TabularFramework(TimestampMixin, db.Model):
     metric_value = db.Column(db.Float)
     other_metrics = db.Column(db.JSON)
     problem_type = db.Column(db.String(16))
-    
+
     duration = db.Column(db.Float)
     training_duration = db.Column(db.Float)
     predict_duration = db.Column(db.Float)
@@ -169,7 +152,6 @@ class TabularFramework(TimestampMixin, db.Model):
     info = db.Column(db.String(256))
     experiment_id = db.Column(db.String(64))
 
-    # kwargs so that we can create with **kwargs
     def __init__(self, user_pk=None, framework_id=None, framework_pk=None, framework_name=None,
                  train_ids=None, test_ids=None, target=None,
                  is_class=None, max_runtime_seconds=None,
@@ -195,6 +177,28 @@ class TabularFramework(TimestampMixin, db.Model):
         self.outdir = outdir
         self.experiment_id = experiment_id
 
+
+class TabularFrameworkPredictions(TimestampMixin, db.Model):
+    pk = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(64), unique=True)
+    framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'), nullable=True)
+    dataset_pk = db.Column(db.Integer, db.ForeignKey('tabular_dataset.pk'), nullable=True)
+    fold = db.Column(db.Integer)
+    path = db.Column(db.String(512))
+    gcp_path = db.Column(db.String(512), nullable=True)
+    status = db.Column(db.String(16), nullable=True)
+
+    def __init__(self, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
+        self.id = str(uuid.uuid4())
+        self.framework_pk = framework_pk
+        self.dataset_pk = dataset_pk
+        self.fold = fold
+        if path is not None:
+            self.path = path
+        if gcp_path is not None:
+            self.gcp_path = None
+
+
 class TabularFrameworkService(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
@@ -219,7 +223,7 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         self.params = params
         self.extends = extends
 
-        
+
 class DeploymentWriteup(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
@@ -230,7 +234,7 @@ class DeploymentWriteup(TimestampMixin, db.Model):
         self.id = str(uuid.uuid4())
         self.name = name
         self.content = content
-    
+
 
 if __name__ == '__main__':
     import fire
