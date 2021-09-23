@@ -116,8 +116,8 @@ class TabularFramework(TimestampMixin, db.Model):
     id = db.Column(db.String(64), unique=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
 
-    framework_id = db.Column(db.String(32), nullable=True)
     framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework_service.pk'), nullable=True)
+    framework_id = db.Column(db.String(32), nullable=True)
     framework_name = db.Column(db.String(32), nullable=True)
 
     train_ids = db.Column(db.JSON)
@@ -209,9 +209,11 @@ class TabularFrameworkService(TimestampMixin, db.Model):
     refs = db.Column(db.JSON)
     params = db.Column(db.JSON)
     extends = db.Column(db.String(128))
+    has_predict = db.Column(db.Boolean, default=True)
 
     def __init__(self, framework_name=None, framework_id=None, service_id=None,
-                 description=None, project=None, refs=None, params=None, extends=None):
+                 description=None, project=None, refs=None, params=None, extends=None,
+                 has_predict=True):
         self.id = str(uuid.uuid4())
         self.framework_name = framework_name
         self.framework_id = framework_id
@@ -221,6 +223,7 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         self.refs = refs
         self.params = params
         self.extends = extends
+        self.has_predict = has_predict
 
 
 class DeploymentWriteup(TimestampMixin, db.Model):

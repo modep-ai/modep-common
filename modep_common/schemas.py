@@ -7,7 +7,7 @@ class DefaultResponse(Schema):
 
 class TabularFrameworkInfoSchema(Schema):
     class Meta:
-        fields = ('framework_name', 'description', 'project', 'params')
+        fields = ('framework_name', 'description', 'project', 'params', 'has_predict')
         ordered = True
 
 
