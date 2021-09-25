@@ -135,7 +135,6 @@ class TabularFramework(TimestampMixin, db.Model):
     fold_model_txt = db.Column(db.JSON)
     n_folds = db.Column(db.Integer)
 
-    task_id = db.Column(db.String(64), unique=True)
     outdir = db.Column(db.String(512), nullable=True)
     version = db.Column(db.String(16), nullable=True)
     metric_name = db.Column(db.String(16), nullable=True)
@@ -148,8 +147,9 @@ class TabularFramework(TimestampMixin, db.Model):
     predict_duration = db.Column(db.Float)
 
     models_count = db.Column(db.Integer)
-    info = db.Column(db.String(256))
+    info = db.Column(db.String(512), default='')
     experiment_id = db.Column(db.String(64))
+    task_id = db.Column(db.String(64), unique=True)
 
     def __init__(self, user_pk=None, framework_id=None, framework_pk=None, framework_name=None,
                  train_ids=None, test_ids=None, target=None,

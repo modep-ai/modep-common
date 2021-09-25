@@ -18,6 +18,7 @@ class TabularFrameworkParamsSchema(Schema):
     target = fields.String(required=True, description='Target column to predict')
     max_runtime_seconds = fields.Int(required=True, description='Time in seconds to run')
     experiment_id = fields.String(required=False, description='Experiment tag for grouping runs', default='')
+    cores = fields.Int(required=False, description='Number of CPU cores to use', default=1)
 
 
 class TabularFrameworkSchema(Schema):
@@ -35,7 +36,7 @@ class TabularFrameworkSchema(Schema):
 class TabularFrameworkPredictSchema(Schema):
     framework_id = fields.String(required=True, description="ID of the trained framework")
     dataset_id = fields.String(required=True, description='ID of dataset to predict on')
-
+    cores = fields.Int(required=False, description='Number of CPU cores to use', default=1)
 
 class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
