@@ -35,7 +35,7 @@ class TabularFrameworkSchema(Schema):
 class TabularFrameworkPredictSchema(Schema):
     framework_id = fields.String(required=True, description="ID of the trained framework")
     dataset_id = fields.String(required=True, description='ID of dataset to predict on')
-    cores = fields.Int(required=False, description='Number of CPU cores to use', default=1)
+
 
 class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
