@@ -7,6 +7,7 @@ from modep_common import settings
 
 logger = logging.getLogger(__name__)
 
+
 class StorageClient:
     def __init__(self):
         self.client = storage.Client()
