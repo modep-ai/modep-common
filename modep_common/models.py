@@ -15,6 +15,15 @@ class TimestampMixin(object):
     updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
 
+class StatusMixin(object):
+    status = db.Column(db.String(16), nullable=True)
+    info = db.Column(db.String(512), default='')
+
+
+# class UUIDMixin(object):
+#     id = db.Column(db.String(64), default=str(uuid.uuid4()))
+
+
 class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ip = db.Column(db.String(256), unique=True)
@@ -57,32 +66,6 @@ class User(UserMixin, TimestampMixin, db.Model):
         return '<User email=%r>' % (self.email)
 
 
-class StripeCustomer(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    customer_id = db.Column(db.String(255), nullable=True)
-    subscription_id = db.Column(db.String(255), nullable=True)
-
-    def __repr__(self):
-        return '<StripeCustomer id=%r, user_pk=%r, customer_id=%r, subscription_id=%r, created=%r>' % \
-                (self.id, self.user_pk, self.customer_id, self.subscription_id, self.created)
-
-
-class StripeCheckoutSession(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    customer_id = db.Column(db.String(255), nullable=True)
-    subscription_id = db.Column(db.String(255), nullable=True)
-    checkout_session = db.Column(db.JSON)
-
-
-class StripeInvoice(TimestampMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    customer_id = db.Column(db.String(255), nullable=True)
-    invoice = db.Column(db.JSON)
-
-
 class ContactForm(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
@@ -111,12 +94,14 @@ class TabularDataset(TimestampMixin, db.Model):
         self.mbytes = mbytes
 
 
-class TabularFramework(TimestampMixin, db.Model):
+class TabularFramework(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
 
-    framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework_service.pk'), nullable=True)
+    framework_pk = db.Column(db.Integer,
+                             db.ForeignKey('tabular_framework_service.pk'),
+                             nullable=True)
     framework_id = db.Column(db.String(32), nullable=True)
     framework_name = db.Column(db.String(32), nullable=True)
 
@@ -127,7 +112,6 @@ class TabularFramework(TimestampMixin, db.Model):
     max_runtime_seconds = db.Column(db.Integer)
     gcp_path = db.Column(db.String(512), nullable=True)
     gcp_model_paths = db.Column(db.JSON)
-    status = db.Column(db.String(16), nullable=True)
 
     fold_meta = db.Column(db.JSON)
     fold_results = db.Column(db.JSON)
@@ -147,9 +131,12 @@ class TabularFramework(TimestampMixin, db.Model):
     predict_duration = db.Column(db.Float)
 
     models_count = db.Column(db.Integer)
-    info = db.Column(db.String(512), default='')
     experiment_id = db.Column(db.String(64))
     task_id = db.Column(db.String(64), unique=True)
+
+    flight_pk = db.Column(db.Integer,
+                          db.ForeignKey('tabular_framework_flight.pk'),
+                          nullable=True)
 
     def __init__(self, user_pk=None, framework_id=None, framework_pk=None, framework_name=None,
                  train_ids=None, test_ids=None, target=None,
@@ -177,16 +164,18 @@ class TabularFramework(TimestampMixin, db.Model):
         self.experiment_id = experiment_id
 
 
-class TabularFrameworkPredictions(TimestampMixin, db.Model):
+class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
-    framework_pk = db.Column(db.Integer, db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'), nullable=True)
-    dataset_pk = db.Column(db.Integer, db.ForeignKey('tabular_dataset.pk', ondelete='CASCADE'), nullable=True)
+    framework_pk = db.Column(db.Integer,
+                             db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'),
+                             nullable=True)
+    dataset_pk = db.Column(db.Integer,
+                           db.ForeignKey('tabular_dataset.pk', ondelete='CASCADE'),
+                           nullable=True)
     fold = db.Column(db.Integer)
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512), nullable=True)
-    status = db.Column(db.String(16), nullable=True)
-    info = db.Column(db.String(512), default='')
 
     def __init__(self, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
         self.id = str(uuid.uuid4())
@@ -226,6 +215,17 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         self.extends = extends
         self.has_predict = has_predict
 
+# class TabularFrameworkFlight:
+#     pass
+class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
+    pk = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(64))
+    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    frameworks = db.relationship('TabularFramework', backref='tabular_framework_flight', lazy=True)
+
+    def __init__(self, user_pk):
+        self.user_pk = user_pk
+
 
 class DeploymentWriteup(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
@@ -237,6 +237,28 @@ class DeploymentWriteup(TimestampMixin, db.Model):
         self.id = str(uuid.uuid4())
         self.name = name
         self.content = content
+
+
+class StripeCustomer(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    customer_id = db.Column(db.String(255), nullable=True)
+    subscription_id = db.Column(db.String(255), nullable=True)
+
+
+class StripeCheckoutSession(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    customer_id = db.Column(db.String(255), nullable=True)
+    subscription_id = db.Column(db.String(255), nullable=True)
+    checkout_session = db.Column(db.JSON)
+
+
+class StripeInvoice(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    customer_id = db.Column(db.String(255), nullable=True)
+    invoice = db.Column(db.JSON)
 
 
 if __name__ == '__main__':

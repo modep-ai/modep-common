@@ -20,6 +20,14 @@ class TabularFrameworkParamsSchema(Schema):
     experiment_id = fields.String(required=False, description='Experiment tag for grouping runs', default='')
 
 
+class TabularFrameworkFlightParamsSchema(Schema):
+    framework_names = fields.List(fields.String(), required=False, description="List of framework names to train")
+    train_ids = fields.List(fields.String(), required=True, description='IDs of datasets to train on')
+    test_ids = fields.List(fields.String(), required=True, description='IDs of datasets to test on')
+    target = fields.String(required=True, description='Target column to predict')
+    max_runtime_seconds = fields.Int(required=True, description='Time in seconds to run')
+
+    
 class TabularFrameworkSchema(Schema):
     class Meta:
         fields = (
