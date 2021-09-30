@@ -39,5 +39,5 @@ class TabularFrameworkPredictSchema(Schema):
 
 class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
-        fields = ('id', 'framework_id', 'dataset_id', 'status', 'predictions')
+        fields = ('id', 'framework_id', 'dataset_id', 'status', 'info', 'predictions')
         ordered = True
