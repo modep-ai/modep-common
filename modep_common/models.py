@@ -186,6 +186,7 @@ class TabularFrameworkPredictions(TimestampMixin, db.Model):
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512), nullable=True)
     status = db.Column(db.String(16), nullable=True)
+    info = db.Column(db.String(512), default='')
 
     def __init__(self, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
         self.id = str(uuid.uuid4())
