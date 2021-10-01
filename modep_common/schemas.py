@@ -49,3 +49,29 @@ class TabularFrameworkPredictionsSchema(Schema):
     class Meta:
         fields = ('id', 'framework_id', 'dataset_id', 'status', 'info', 'predictions')
         ordered = True
+
+class TabularFrameworkSchemaForFlight(Schema):
+    class Meta:
+        fields = (
+            'id', 'framework_name', 'version',
+            'created', 'status', 'problem_type', 'metric_name', 'metric_value', 'other_metrics',
+            'duration', 'training_duration', 'predict_duration', 'models_count',
+            'fold_results', 'fold_leaderboard', 'fold_model_txt',
+            'info',
+        )
+        ordered = True
+
+class TabularFrameworkFlightSchema(Schema):
+    class Meta:
+        ordered = True
+
+    id = fields.String(required=True, description='ID')
+    framework_names = fields.List(fields.String(), required=True, description='Framework names to train')
+    created = fields.String(required=True, description='Date created')
+    train_ids = fields.List(fields.String(), required=True, description='IDs of datasets to train on')
+    test_ids = fields.List(fields.String(), required=True, description='IDs of datasets to test on')
+    target = fields.String(required=True, description='Target column to predict')
+    max_runtime_seconds = fields.Int(required=True, description='Time in seconds to run')
+    status = fields.String(required=True, description='Status of the flight job')
+    info = fields.String(required=True, description='Information on the flight job')
+    frameworks = fields.List(fields.Nested(TabularFrameworkSchemaForFlight), required=True)

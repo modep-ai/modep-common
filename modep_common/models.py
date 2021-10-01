@@ -18,10 +18,7 @@ class TimestampMixin(object):
 class StatusMixin(object):
     status = db.Column(db.String(16), nullable=True)
     info = db.Column(db.String(512), default='')
-
-
-# class UUIDMixin(object):
-#     id = db.Column(db.String(64), default=str(uuid.uuid4()))
+    job_name = db.Column(db.String(128), default='')
 
 
 class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
@@ -83,8 +80,9 @@ class TabularDataset(TimestampMixin, db.Model):
     name = db.Column(db.String(128))
     ext = db.Column(db.String(10))
     mbytes = db.Column(db.Float)
+    columns = db.Column(db.JSON)
 
-    def __init__(self, id, user_pk, path, gcp_path, name, ext, mbytes):
+    def __init__(self, id, user_pk, path, gcp_path, name, ext, mbytes, columns=[]):
         self.id = id
         self.user_pk = user_pk
         self.path = path
@@ -92,6 +90,7 @@ class TabularDataset(TimestampMixin, db.Model):
         self.name = name
         self.ext = ext
         self.mbytes = mbytes
+        self.columns = columns
 
 
 class TabularFramework(TimestampMixin, StatusMixin, db.Model):
@@ -99,17 +98,20 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
     id = db.Column(db.String(64), unique=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
 
+    # framework service identifiers
     framework_pk = db.Column(db.Integer,
                              db.ForeignKey('tabular_framework_service.pk'),
                              nullable=True)
     framework_id = db.Column(db.String(32), nullable=True)
     framework_name = db.Column(db.String(32), nullable=True)
 
+    # Flight class also has these next ones
     train_ids = db.Column(db.JSON)
     test_ids =  db.Column(db.JSON)
     target = db.Column(db.String(32))
-    is_class = db.Column(db.Boolean)
     max_runtime_seconds = db.Column(db.Integer)
+
+    is_class = db.Column(db.Boolean)
     gcp_path = db.Column(db.String(512), nullable=True)
     gcp_model_paths = db.Column(db.JSON)
 
@@ -135,7 +137,7 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
     task_id = db.Column(db.String(64), unique=True)
 
     flight_pk = db.Column(db.Integer,
-                          db.ForeignKey('tabular_framework_flight.pk'),
+                          db.ForeignKey('tabular_framework_flight.pk', ondelete='CASCADE'),
                           nullable=True)
 
     def __init__(self, user_pk=None, framework_id=None, framework_pk=None, framework_name=None,
@@ -215,16 +217,27 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         self.extends = extends
         self.has_predict = has_predict
 
-# class TabularFrameworkFlight:
-#     pass
+
 class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
     frameworks = db.relationship('TabularFramework', backref='tabular_framework_flight', lazy=True)
+    framework_names = db.Column(db.JSON)
 
-    def __init__(self, user_pk):
+    train_ids = db.Column(db.JSON)
+    test_ids =  db.Column(db.JSON)
+    target = db.Column(db.String(32))    
+    max_runtime_seconds = db.Column(db.Integer)
+
+    def __init__(self, user_pk, framework_names, train_ids, test_ids, target, max_runtime_seconds):
+        self.id = str(uuid.uuid4())
         self.user_pk = user_pk
+        self.framework_names = framework_names
+        self.train_ids = train_ids
+        self.test_ids = test_ids
+        self.target = target
+        self.max_runtime_seconds = max_runtime_seconds
 
 
 class DeploymentWriteup(TimestampMixin, db.Model):
