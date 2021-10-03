@@ -196,6 +196,7 @@ class TabularFrameworkService(TimestampMixin, db.Model):
     framework_name = db.Column(db.String(32), nullable=True, unique=True)
     framework_id = db.Column(db.String(32), nullable=True, unique=True)
     service_id = db.Column(db.String(32), nullable=True)
+    version = db.Column(db.String(16), nullable=True)
     description = db.Column(db.String(512), nullable=True)
     project = db.Column(db.String(256), nullable=True)
     refs = db.Column(db.JSON)
