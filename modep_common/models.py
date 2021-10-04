@@ -223,7 +223,10 @@ class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    frameworks = db.relationship('TabularFramework', backref='tabular_framework_flight', lazy=True)
+    frameworks = db.relationship('TabularFramework',
+                                 backref='tabular_framework_flight',
+                                 lazy=True,
+                                 order_by='TabularFramework.pk')
     framework_names = db.Column(db.JSON)
 
     train_ids = db.Column(db.JSON)
