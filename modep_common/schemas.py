@@ -5,6 +5,12 @@ class DefaultResponse(Schema):
     message = fields.String(default='Success')
 
 
+class TabularDatasetSchema(Schema):
+    class Meta:
+        fields = ('id', 'name', 'ext', 'mbytes', 'created', 'is_public')
+        ordered = True
+
+
 class TabularFrameworkInfoSchema(Schema):
     class Meta:
         fields = ('framework_name', 'description', 'project', 'params', 'has_predict', 'version')

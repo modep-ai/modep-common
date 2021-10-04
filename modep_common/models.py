@@ -81,6 +81,7 @@ class TabularDataset(TimestampMixin, db.Model):
     ext = db.Column(db.String(10))
     mbytes = db.Column(db.Float)
     columns = db.Column(db.JSON)
+    is_public = db.Column(db.Boolean, default=False)
 
     def __init__(self, id, user_pk, path, gcp_path, name, ext, mbytes, columns=[]):
         self.id = id
