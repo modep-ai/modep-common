@@ -1,4 +1,5 @@
 import uuid
+import logging
 import secrets
 from datetime import datetime
 import werkzeug
@@ -6,6 +7,7 @@ import werkzeug
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import AnonymousUserMixin, UserMixin
 
+logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
 
@@ -170,6 +172,9 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
 class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
+    user_pk = db.Column(db.Integer,
+                        db.ForeignKey('user.pk', ondelete='CASCADE'),
+                        nullable=True)
     framework_pk = db.Column(db.Integer,
                              db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'),
                              nullable=True)
@@ -180,8 +185,9 @@ class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512), nullable=True)
 
-    def __init__(self, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
+    def __init__(self, user_pk, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
         self.id = str(uuid.uuid4())
+        self.user_pk = user_pk
         self.framework_pk = framework_pk
         self.dataset_pk = dataset_pk
         self.fold = fold
@@ -232,7 +238,7 @@ class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
 
     train_ids = db.Column(db.JSON)
     test_ids =  db.Column(db.JSON)
-    target = db.Column(db.String(32))    
+    target = db.Column(db.String(32))
     max_runtime_seconds = db.Column(db.Integer)
 
     def __init__(self, user_pk, framework_names, train_ids, test_ids, target, max_runtime_seconds):
@@ -279,6 +285,39 @@ class StripeInvoice(TimestampMixin, db.Model):
     invoice = db.Column(db.JSON)
 
 
-if __name__ == '__main__':
-    import fire
-    fire.Fire()
+class UserQuota(TimestampMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    concurrency = db.Column(db.Integer)
+    max_cpus = db.Column(db.Integer)
+    max_gpus = db.Column(db.Integer)
+    max_runtime_seconds = db.Column(db.Integer)
+
+    def __init__(self, user):
+        self.user_pk = user.pk
+        self.set_from_tier(user.tier)
+
+    def set_from_tier(self, tier):
+        if tier == 'free':
+            self.concurrency = 1
+            self.max_cpus = 8
+            self.max_gpus = 0
+            self.max_runtime_seconds = int(60 * 10)
+        elif tier == 'supporter':
+            self.concurrency = 1
+            self.max_cpus = 8
+            self.max_gpus = 0
+            self.max_runtime_seconds = int(60 * 30)
+        elif tier == 'lab':
+            self.concurrency = 2
+            self.max_cpus = 16
+            self.max_gpus = 0
+            self.max_runtime_seconds = int(60 * 60)
+        elif tier == 'startup':
+            self.concurrency = 4
+            self.max_cpus = 8
+            self.max_gpus = 1
+            self.max_runtime_seconds = int(60 * 60 * 8)
+        else:
+            # custom
+            logger.info('Not using preset quotas for tier: "%s"', tier)
