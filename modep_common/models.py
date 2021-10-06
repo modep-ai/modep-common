@@ -285,7 +285,64 @@ class StripeInvoice(TimestampMixin, db.Model):
     invoice = db.Column(db.JSON)
 
 
+class ApiTier(TimestampMixin, db.Model):
+    """ Default set of tiers, excluding custom tier """
+    id = db.Column(db.Integer, primary_key=True)
+    tier_name = db.Column(db.String(16), unique=True)
+    concurrency = db.Column(db.Integer)
+    max_cpus = db.Column(db.Integer)
+    max_gpus = db.Column(db.Integer)
+    max_runtime_seconds = db.Column(db.Integer)
+
+    def __init__(self, tier_name, concurrency, max_cpus, max_gpus, max_runtime_seconds):
+        self.tier_name = tier_name
+        self.concurrency = concurrency
+        self.max_cpus = max_cpus
+        self.max_gpus = max_gpus
+        self.max_runtime_seconds = max_runtime_seconds
+
+    @staticmethod
+    def create_all():
+        TIERS = {
+            'free': {
+                'concurrency': 1,
+                'max_cpus': 8,
+                'max_gpus': 0,
+                'max_runtime_seconds': int(60 * 10),
+            },
+            'supporter': {
+                'concurrency': 1,
+                'max_cpus': 8,
+                'max_gpus': 0,
+                'max_runtime_seconds': int(60 * 30),
+            },
+            'lab': {
+                'concurrency': 2,
+                'max_cpus': 16,
+                'max_gpus': 0,
+                'max_runtime_seconds': int(60 * 60),
+            },
+            'startup': {
+                'concurrency': 4,
+                'max_cpus': 32,
+                'max_gpus': 0,
+                'max_runtime_seconds': int(60 * 60 * 8),
+            }
+        }
+        for tier_name, tier_kwargs in TIERS.items():
+            tier = ApiTier.query.filter_by(tier_name=tier_name)
+            if tier.count() == 0:
+                tier_kwargs['tier_name'] = tier_name
+                tier = ApiTier(**tier_kwargs)
+            else:
+                tier.update(tier_kwargs)
+                tier = tier[0]
+            db.session.add(tier)
+            db.session.commit()
+
+
 class UserQuota(TimestampMixin, db.Model):
+    """ Can be set customized per user """
     id = db.Column(db.Integer, primary_key=True)
     user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
     concurrency = db.Column(db.Integer)
@@ -297,27 +354,14 @@ class UserQuota(TimestampMixin, db.Model):
         self.user_pk = user.pk
         self.set_from_tier(user.tier)
 
-    def set_from_tier(self, tier):
-        if tier == 'free':
-            self.concurrency = 1
-            self.max_cpus = 8
-            self.max_gpus = 0
-            self.max_runtime_seconds = int(60 * 10)
-        elif tier == 'supporter':
-            self.concurrency = 1
-            self.max_cpus = 8
-            self.max_gpus = 0
-            self.max_runtime_seconds = int(60 * 30)
-        elif tier == 'lab':
-            self.concurrency = 2
-            self.max_cpus = 16
-            self.max_gpus = 0
-            self.max_runtime_seconds = int(60 * 60)
-        elif tier == 'startup':
-            self.concurrency = 4
-            self.max_cpus = 8
-            self.max_gpus = 1
-            self.max_runtime_seconds = int(60 * 60 * 8)
-        else:
-            # custom
-            logger.info('Not using preset quotas for tier: "%s"', tier)
+    def set_from_tier(self, tier_name):
+        if tier_name == 'custom':
+            logger.info('Not using preset quotas for tier: "%s"', tier_name)
+            return
+
+        tier = ApiTier.query.filter_by(tier_name=tier_name).one()
+
+        self.concurrency = tier.concurrency
+        self.max_cpus = tier.max_cpus
+        self.max_gpus = tier.max_gpus
+        self.max_runtime_seconds = tier.max_runtime_seconds
