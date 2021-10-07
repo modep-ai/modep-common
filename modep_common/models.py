@@ -7,6 +7,8 @@ import werkzeug
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import AnonymousUserMixin, UserMixin
 
+from modep_common.io import StorageClient
+
 logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
@@ -167,6 +169,22 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
         self.task_id = task_id
         self.outdir = outdir
         self.experiment_id = experiment_id
+
+    def delete_remote(self):
+        sc = StorageClient()
+
+        # delete outdir zip
+        sc.try_to_delete(self.gcp_path)
+
+        # delete models
+        if self.gcp_model_paths is not None:
+            for gcp_path in self.gcp_model_paths:
+                sc.try_to_delete(gcp_path)
+
+        # delete predictions
+        preds = TabularFrameworkPredictions.query.filter_by(framework_pk=self.pk)
+        for pred in preds:
+            sc.try_to_delete(pred.gcp_path)
 
 
 class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):

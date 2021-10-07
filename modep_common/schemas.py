@@ -13,7 +13,8 @@ class TabularDatasetSchema(Schema):
 
 class TabularFrameworkInfoSchema(Schema):
     class Meta:
-        fields = ('framework_name', 'description', 'project', 'params', 'has_predict', 'version')
+        # not including version b/c it doesn't always match the actual one that gets installed
+        fields = ('framework_name', 'description', 'project', 'params', 'has_predict')
         ordered = True
 
 
