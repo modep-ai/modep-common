@@ -1,17 +1,27 @@
 import uuid
 import logging
 import secrets
-from datetime import datetime
 import werkzeug
+from datetime import datetime
 
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import AnonymousUserMixin, UserMixin
 
 from modep_common.io import StorageClient
+from modep_common import settings
 
 logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
+
+
+def get_app_and_db():
+    app = Flask('app')
+    app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db = SQLAlchemy(app)
+    return app, db
 
 
 class TimestampMixin(object):
