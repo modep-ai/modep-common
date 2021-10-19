@@ -196,6 +196,9 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
         for pred in preds:
             sc.try_to_delete(pred.gcp_path)
 
+        # delete job yaml
+        sc.try_to_delete(f"tabular-frameworks/{self.id}/job.yaml")
+
 
 class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
