@@ -1,3 +1,4 @@
+import os
 import uuid
 import logging
 import secrets
@@ -20,6 +21,8 @@ def get_app_and_db():
     app = Flask('app')
     app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['CELERY_BROKER_URL'] = os.environ['CELERY_BROKER_URL']
+    app.config['CELERY_RESULT_BACKEND'] = os.environ['CELERY_RESULT_BACKEND']
     db = SQLAlchemy(app)
     return app, db
 
