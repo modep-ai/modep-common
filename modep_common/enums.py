@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class JobStatus(Enum):
     CREATED = 0
     STARTING = 1

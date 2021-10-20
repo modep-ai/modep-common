@@ -1,16 +1,17 @@
-import os
-import uuid
 import logging
+import os
 import secrets
-import werkzeug
+import uuid
 from datetime import datetime
 
+import werkzeug
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import AnonymousUserMixin, UserMixin
+from flask_sqlalchemy import SQLAlchemy
 
-from modep_common.io import StorageClient
 from modep_common import settings
+from modep_common.io import StorageClient
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +19,11 @@ db = SQLAlchemy()
 
 
 def get_app_and_db():
-    app = Flask('app')
-    app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['CELERY_BROKER_URL'] = os.environ['CELERY_BROKER_URL']
-    app.config['CELERY_RESULT_BACKEND'] = os.environ['CELERY_RESULT_BACKEND']
+    app = Flask("app")
+    app.config["SQLALCHEMY_DATABASE_URI"] = settings.SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["CELERY_BROKER_URL"] = os.environ["CELERY_BROKER_URL"]
+    app.config["CELERY_RESULT_BACKEND"] = os.environ["CELERY_RESULT_BACKEND"]
     db = SQLAlchemy(app)
     return app, db
 
@@ -34,8 +35,8 @@ class TimestampMixin(object):
 
 class StatusMixin(object):
     status = db.Column(db.String(16), nullable=True)
-    info = db.Column(db.String(512), default='')
-    job_name = db.Column(db.String(128), default='')
+    info = db.Column(db.String(512), default="")
+    job_name = db.Column(db.String(128), default="")
 
 
 class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
@@ -47,7 +48,11 @@ class AnonUser(AnonymousUserMixin, TimestampMixin, db.Model):
         self.nb_requests = 0
 
     def __repr__(self):
-        return '<AnonUser id=%r, ip=%r, nb_requests = %i>' % (self.id, self.ip, self.nb_requests)
+        return "<AnonUser id=%r, ip=%r, nb_requests = %i>" % (
+            self.id,
+            self.ip,
+            self.nb_requests,
+        )
 
 
 class User(UserMixin, TimestampMixin, db.Model):
@@ -61,7 +66,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     tier = db.Column(db.String(16))
     tier_info = db.Column(db.String(512))
 
-    def __init__(self, email, password, ip, tier='free'):
+    def __init__(self, email, password, ip, tier="free"):
         self.id = str(uuid.uuid4())
         self.email = email
         self.set_password(password)
@@ -77,12 +82,12 @@ class User(UserMixin, TimestampMixin, db.Model):
         return werkzeug.security.check_password_hash(self.pwd_hash, password)
 
     def __repr__(self):
-        return '<User email=%r>' % (self.email)
+        return "<User email=%r>" % (self.email)
 
 
 class ContactForm(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     user_is_anon = db.Column(db.Boolean)
     user_email = db.Column(db.String(128), unique=False)
     msg = db.Column(db.Text)
@@ -91,7 +96,7 @@ class ContactForm(TimestampMixin, db.Model):
 class TabularDataset(TimestampMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512))
     name = db.Column(db.String(128))
@@ -114,18 +119,18 @@ class TabularDataset(TimestampMixin, db.Model):
 class TabularFramework(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
 
     # framework service identifiers
-    framework_pk = db.Column(db.Integer,
-                             db.ForeignKey('tabular_framework_service.pk'),
-                             nullable=True)
+    framework_pk = db.Column(
+        db.Integer, db.ForeignKey("tabular_framework_service.pk"), nullable=True
+    )
     framework_id = db.Column(db.String(32), nullable=True)
     framework_name = db.Column(db.String(32), nullable=True)
 
     # Flight class also has these next ones
     train_ids = db.Column(db.JSON)
-    test_ids =  db.Column(db.JSON)
+    test_ids = db.Column(db.JSON)
     target = db.Column(db.String(32))
     max_runtime_seconds = db.Column(db.Integer)
 
@@ -154,15 +159,32 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
     experiment_id = db.Column(db.String(64))
     task_id = db.Column(db.String(64), unique=True)
 
-    flight_pk = db.Column(db.Integer,
-                          db.ForeignKey('tabular_framework_flight.pk', ondelete='CASCADE'),
-                          nullable=True)
+    flight_pk = db.Column(
+        db.Integer,
+        db.ForeignKey("tabular_framework_flight.pk", ondelete="CASCADE"),
+        nullable=True,
+    )
 
-    def __init__(self, user_pk=None, framework_id=None, framework_pk=None, framework_name=None,
-                 train_ids=None, test_ids=None, target=None,
-                 is_class=None, max_runtime_seconds=None,
-                 predictions=None, meta=None, results=None, n_folds=None, leaderboard=None,
-                 task_id=None, outdir=None, experiment_id=None):
+    def __init__(
+        self,
+        user_pk=None,
+        framework_id=None,
+        framework_pk=None,
+        framework_name=None,
+        train_ids=None,
+        test_ids=None,
+        target=None,
+        is_class=None,
+        max_runtime_seconds=None,
+        predictions=None,
+        meta=None,
+        results=None,
+        n_folds=None,
+        leaderboard=None,
+        task_id=None,
+        outdir=None,
+        experiment_id=None,
+    ):
 
         self.id = str(uuid.uuid4())
         self.user_pk = user_pk
@@ -206,20 +228,26 @@ class TabularFramework(TimestampMixin, StatusMixin, db.Model):
 class TabularFrameworkPredictions(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64), unique=True)
-    user_pk = db.Column(db.Integer,
-                        db.ForeignKey('user.pk', ondelete='CASCADE'),
-                        nullable=True)
-    framework_pk = db.Column(db.Integer,
-                             db.ForeignKey('tabular_framework.pk', ondelete='CASCADE'),
-                             nullable=True)
-    dataset_pk = db.Column(db.Integer,
-                           db.ForeignKey('tabular_dataset.pk', ondelete='CASCADE'),
-                           nullable=True)
+    user_pk = db.Column(
+        db.Integer, db.ForeignKey("user.pk", ondelete="CASCADE"), nullable=True
+    )
+    framework_pk = db.Column(
+        db.Integer,
+        db.ForeignKey("tabular_framework.pk", ondelete="CASCADE"),
+        nullable=True,
+    )
+    dataset_pk = db.Column(
+        db.Integer,
+        db.ForeignKey("tabular_dataset.pk", ondelete="CASCADE"),
+        nullable=True,
+    )
     fold = db.Column(db.Integer)
     path = db.Column(db.String(512))
     gcp_path = db.Column(db.String(512), nullable=True)
 
-    def __init__(self, user_pk, framework_pk, dataset_pk, fold, path=None, gcp_path=None):
+    def __init__(
+        self, user_pk, framework_pk, dataset_pk, fold, path=None, gcp_path=None
+    ):
         self.id = str(uuid.uuid4())
         self.user_pk = user_pk
         self.framework_pk = framework_pk
@@ -245,9 +273,18 @@ class TabularFrameworkService(TimestampMixin, db.Model):
     extends = db.Column(db.String(128))
     has_predict = db.Column(db.Boolean, default=True)
 
-    def __init__(self, framework_name=None, framework_id=None, service_id=None,
-                 description=None, project=None, refs=None, params=None, extends=None,
-                 has_predict=True):
+    def __init__(
+        self,
+        framework_name=None,
+        framework_id=None,
+        service_id=None,
+        description=None,
+        project=None,
+        refs=None,
+        params=None,
+        extends=None,
+        has_predict=True,
+    ):
         self.id = str(uuid.uuid4())
         self.framework_name = framework_name
         self.framework_id = framework_id
@@ -263,19 +300,23 @@ class TabularFrameworkService(TimestampMixin, db.Model):
 class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
     pk = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(64))
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
-    frameworks = db.relationship('TabularFramework',
-                                 backref='tabular_framework_flight',
-                                 lazy=True,
-                                 order_by='TabularFramework.pk')
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
+    frameworks = db.relationship(
+        "TabularFramework",
+        backref="tabular_framework_flight",
+        lazy=True,
+        order_by="TabularFramework.pk",
+    )
     framework_names = db.Column(db.JSON)
 
     train_ids = db.Column(db.JSON)
-    test_ids =  db.Column(db.JSON)
+    test_ids = db.Column(db.JSON)
     target = db.Column(db.String(32))
     max_runtime_seconds = db.Column(db.Integer)
 
-    def __init__(self, user_pk, framework_names, train_ids, test_ids, target, max_runtime_seconds):
+    def __init__(
+        self, user_pk, framework_names, train_ids, test_ids, target, max_runtime_seconds
+    ):
         self.id = str(uuid.uuid4())
         self.user_pk = user_pk
         self.framework_names = framework_names
@@ -299,14 +340,14 @@ class DeploymentWriteup(TimestampMixin, db.Model):
 
 class StripeCustomer(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     customer_id = db.Column(db.String(255), nullable=True)
     subscription_id = db.Column(db.String(255), nullable=True)
 
 
 class StripeCheckoutSession(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     customer_id = db.Column(db.String(255), nullable=True)
     subscription_id = db.Column(db.String(255), nullable=True)
     checkout_session = db.Column(db.JSON)
@@ -314,13 +355,14 @@ class StripeCheckoutSession(TimestampMixin, db.Model):
 
 class StripeInvoice(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     customer_id = db.Column(db.String(255), nullable=True)
     invoice = db.Column(db.JSON)
 
 
 class ApiTier(TimestampMixin, db.Model):
-    """ Default set of tiers, excluding custom tier """
+    """Default set of tiers, excluding custom tier"""
+
     id = db.Column(db.Integer, primary_key=True)
     tier_name = db.Column(db.String(16), unique=True)
     concurrency = db.Column(db.Integer)
@@ -338,35 +380,35 @@ class ApiTier(TimestampMixin, db.Model):
     @staticmethod
     def create_all():
         TIERS = {
-            'free': {
-                'concurrency': 1,
-                'max_cpus': 8,
-                'max_gpus': 0,
-                'max_runtime_seconds': int(60 * 10),
+            "free": {
+                "concurrency": 1,
+                "max_cpus": 8,
+                "max_gpus": 0,
+                "max_runtime_seconds": int(60 * 10),
             },
-            'supporter': {
-                'concurrency': 1,
-                'max_cpus': 8,
-                'max_gpus': 0,
-                'max_runtime_seconds': int(60 * 30),
+            "supporter": {
+                "concurrency": 1,
+                "max_cpus": 8,
+                "max_gpus": 0,
+                "max_runtime_seconds": int(60 * 30),
             },
-            'lab': {
-                'concurrency': 2,
-                'max_cpus': 16,
-                'max_gpus': 0,
-                'max_runtime_seconds': int(60 * 60),
+            "lab": {
+                "concurrency": 2,
+                "max_cpus": 16,
+                "max_gpus": 0,
+                "max_runtime_seconds": int(60 * 60),
             },
-            'startup': {
-                'concurrency': 4,
-                'max_cpus': 32,
-                'max_gpus': 0,
-                'max_runtime_seconds': int(60 * 60 * 8),
-            }
+            "startup": {
+                "concurrency": 4,
+                "max_cpus": 32,
+                "max_gpus": 0,
+                "max_runtime_seconds": int(60 * 60 * 8),
+            },
         }
         for tier_name, tier_kwargs in TIERS.items():
             tier = ApiTier.query.filter_by(tier_name=tier_name)
             if tier.count() == 0:
-                tier_kwargs['tier_name'] = tier_name
+                tier_kwargs["tier_name"] = tier_name
                 tier = ApiTier(**tier_kwargs)
             else:
                 tier.update(tier_kwargs)
@@ -376,9 +418,10 @@ class ApiTier(TimestampMixin, db.Model):
 
 
 class UserQuota(TimestampMixin, db.Model):
-    """ Can be set customized per user """
+    """Can be set customized per user"""
+
     id = db.Column(db.Integer, primary_key=True)
-    user_pk = db.Column(db.Integer, db.ForeignKey('user.pk'), nullable=True)
+    user_pk = db.Column(db.Integer, db.ForeignKey("user.pk"), nullable=True)
     concurrency = db.Column(db.Integer)
     max_cpus = db.Column(db.Integer)
     max_gpus = db.Column(db.Integer)
@@ -389,7 +432,7 @@ class UserQuota(TimestampMixin, db.Model):
         self.set_from_tier(user.tier)
 
     def set_from_tier(self, tier_name):
-        if tier_name == 'custom':
+        if tier_name == "custom":
             logger.info('Not using preset quotas for tier: "%s"', tier_name)
             return
 
