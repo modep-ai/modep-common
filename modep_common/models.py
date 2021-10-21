@@ -22,8 +22,8 @@ def get_app_and_db():
     app = Flask("app")
     app.config["SQLALCHEMY_DATABASE_URI"] = settings.SQLALCHEMY_DATABASE_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["CELERY_BROKER_URL"] = os.environ["CELERY_BROKER_URL"]
-    app.config["CELERY_RESULT_BACKEND"] = os.environ["CELERY_RESULT_BACKEND"]
+    app.config["CELERY_BROKER_URL"] = os.environ.get("CELERY_BROKER_URL", None)
+    app.config["CELERY_RESULT_BACKEND"] = os.environ.get("CELERY_RESULT_BACKEND", None)
     db = SQLAlchemy(app)
     return app, db
 
@@ -272,6 +272,7 @@ class TabularFrameworkService(TimestampMixin, db.Model):
     params = db.Column(db.JSON)
     extends = db.Column(db.String(128))
     has_predict = db.Column(db.Boolean, default=True)
+    image_name = db.Column(db.String(32), nullable=True)
 
     def __init__(
         self,
