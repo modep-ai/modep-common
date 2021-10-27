@@ -443,3 +443,14 @@ class UserQuota(TimestampMixin, db.Model):
         self.max_cpus = tier.max_cpus
         self.max_gpus = tier.max_gpus
         self.max_runtime_seconds = tier.max_runtime_seconds
+
+
+def test_db():
+    app, db = get_app_and_db()
+    with app.app_context():
+        users = User.query.all()
+        print(users)
+
+
+if __name__ == '__main__':
+    test_db()
