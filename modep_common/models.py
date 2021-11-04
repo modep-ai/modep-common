@@ -285,6 +285,8 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         params=None,
         extends=None,
         has_predict=True,
+        version=None,
+        image_name=None,
     ):
         self.id = str(uuid.uuid4())
         self.framework_name = framework_name
@@ -296,6 +298,8 @@ class TabularFrameworkService(TimestampMixin, db.Model):
         self.params = params
         self.extends = extends
         self.has_predict = has_predict
+        self.version = version
+        self.image_name = image_name
 
 
 class TabularFrameworkFlight(TimestampMixin, StatusMixin, db.Model):
