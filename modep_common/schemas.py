@@ -7,7 +7,16 @@ class DefaultResponse(Schema):
 
 class TabularDatasetSchema(Schema):
     class Meta:
-        fields = ("id", "name", "ext", "mbytes", "created", "is_public")
+        fields = (
+            "id",
+            "name",
+            "ext",
+            "mbytes",
+            "created",
+            "is_public",
+            "target",
+            "categorical_target",
+        )
         ordered = True
 
 
@@ -126,7 +135,9 @@ class TabularFrameworkFlightSchema(Schema):
 
     id = fields.String(required=True, description="ID")
     framework_names = fields.List(
-        fields.String(), required=True, description="Framework names to train"
+        fields.String(),
+        required=True,
+        description="Framework names to train",
     )
     created = fields.String(required=True, description="Date created")
     train_ids = fields.List(

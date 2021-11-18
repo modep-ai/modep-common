@@ -102,10 +102,24 @@ class TabularDataset(TimestampMixin, db.Model):
     name = db.Column(db.String(128))
     ext = db.Column(db.String(10))
     mbytes = db.Column(db.Float)
-    columns = db.Column(db.JSON)
     is_public = db.Column(db.Boolean, default=False)
+    columns = db.Column(db.JSON)
+    target = db.Column(db.String(64), nullable=True)
+    categorical_target = db.Column(db.Boolean, default=True)
 
-    def __init__(self, id, user_pk, path, gcp_path, name, ext, mbytes, columns=[]):
+    def __init__(
+        self,
+        id,
+        user_pk,
+        path,
+        gcp_path,
+        name,
+        ext,
+        mbytes,
+        columns=[],
+        target=None,
+        categorical_target=True,
+    ):
         self.id = id
         self.user_pk = user_pk
         self.path = path
@@ -114,6 +128,8 @@ class TabularDataset(TimestampMixin, db.Model):
         self.ext = ext
         self.mbytes = mbytes
         self.columns = columns
+        self.target = target
+        self.categorical_target = categorical_target
 
 
 class TabularFramework(TimestampMixin, StatusMixin, db.Model):
@@ -456,5 +472,5 @@ def test_db():
         print(users)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_db()
